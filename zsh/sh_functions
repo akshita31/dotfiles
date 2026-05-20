@@ -2,6 +2,13 @@
 # Rushy Panchal
 # Misc shell functions.
 
+# Create a yak workspace and SSH into it once ready. Usage: yws <name> [--repo <repo> ...]
+yws() {
+    local name="$1"
+    shift
+    yak ws create --name "$name" "$@" && yak ws ssh --name "$name"
+}
+
 view_file() {
     emacsclient --alternate-editor='' --create-frame -nw --eval "(view-file \"$1\")"
 }
@@ -194,6 +201,66 @@ power_getchargingwattage() {
 
 power_getchargestate() {
     pmset -g batt | grep -Eo "\d+%" | cut -d% -f1
+}
+
+# ---------------------------------------------------------------------------
+# Kubernetes pod helpers — uses current kubectx/kubens context.
+# For per-terminal isolated contexts: brew install kubie
+#   then: kubie ctx <cluster> && kubie ns <namespace>
+# ---------------------------------------------------------------------------
+
+_kpod_select() {
+    local ctx ns
+    ctx=$(kubectl config current-context 2>/dev/null)
+    ns=$(kubectl config view --minify --output 'jsonpath={..namespace}' 2>/dev/null)
+    ns=${ns:-default}
+    kubectl get pods --no-headers -o custom-columns=":metadata.name" 2>/dev/null \
+        | fzf --height 40% --reverse --prompt "pod ($ctx/$ns): "
+}
+
+# Print selected pod name, or run kubectl get pod <name> <args> if args given
+kpod() {
+    local pod
+    pod=$(_kpod_select) || return 1
+    [[ -z "$pod" ]] && return 1
+    if [[ $# -eq 0 ]]; then
+        echo "$pod"
+    else
+        kubectl get pod "$pod" "$@"
+    fi
+}
+
+# Exec into a selected pod; defaults to sh
+kexec() {
+    local pod
+    pod=$(_kpod_select) || return 1
+    [[ -z "$pod" ]] && return 1
+    kubectl exec -it --as=compute:cluster-admin "$pod" -- "${@:-sh}"
+}
+
+# Select pod then fzf-pick an Istio admin endpoint and curl it
+kistio() {
+    local pod endpoint
+    pod=$(_kpod_select) || return 1
+    [[ -z "$pod" ]] && return 1
+    endpoint=$(printf 'stats\nconfig_dump\nclusters\nlisteners\nroutes\ncerts\nserver_info' \
+        | fzf --height 30% --reverse --prompt "endpoint: ") || return 1
+    [[ -z "$endpoint" ]] && return 1
+    kubectl exec --as=compute:cluster-admin "$pod" -- curl -s "localhost:15000/$endpoint" | ${PAGER:-less}
+}
+
+kistio-stats() {
+    local pod
+    pod=$(_kpod_select) || return 1
+    [[ -z "$pod" ]] && return 1
+    kubectl exec --as=compute:cluster-admin "$pod" -- curl -s localhost:15000/stats | ${PAGER:-less}
+}
+
+kistio-config() {
+    local pod
+    pod=$(_kpod_select) || return 1
+    [[ -z "$pod" ]] && return 1
+    kubectl exec --as=compute:cluster-admin "$pod" -- curl -s localhost:15000/config_dump | ${PAGER:-less}
 }
 
 ### WSL 2
