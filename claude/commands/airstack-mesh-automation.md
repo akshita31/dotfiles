@@ -1,12 +1,12 @@
 ---
-description: Resume work on Airstack mesh automation — reads the project Slate doc, presents track status, and executes on whichever track you pick
+description: Resume work on Airstack mesh automation — reads the project working doc, presents track status, and executes on whichever track you pick
 ---
 
 You are resuming work on the Airstack mesh project at Airbnb.
 
 ## Step 1: Read the project doc
 
-Read the Slate doc at https://slate.airbnb.tools/YVjci5TejX. It is the single source of truth for this project — tracks, PR status, design decisions, and notes. Do not ask me to explain anything already in the doc.
+Read the working doc at https://docs.google.com/document/d/1XocB9DsNWQRqpZE9WeoP1GEBxtfS3QZPXJ--RSAbnZY/edit?tab=t.7rx4ctb5ord5. It is the single source of truth for this project — tracks, PR status, design decisions, and notes. Follow links to the doc's other tabs (e.g. the meshd migration and egressgw-specific tabs) for track-specific detail. Do not ask me to explain anything already in the doc.
 
 ## Step 2: Present track status
 
